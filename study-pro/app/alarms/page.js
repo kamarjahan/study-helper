@@ -1,28 +1,43 @@
 "use client";
 import { useState } from "react";
 import emailjs from "emailjs-com";
+import { useSettings } from "@/hooks/useSettings"; // Import Settings
 
 export default function AlarmPage() {
+  const { settings } = useSettings(); // Get Settings
   const [isRinging, setIsRinging] = useState(false);
   const [mathProblem, setMathProblem] = useState(null);
   const [userAnswer, setUserAnswer] = useState("");
 
   const triggerAlarm = () => {
     setIsRinging(true);
+    // ... (Math logic) ...
     const a = Math.floor(Math.random() * 50);
     const b = Math.floor(Math.random() * 50);
     setMathProblem({ q: `${a} + ${b}`, a: a + b });
     
-    // Start 5-minute fail-safe timer for email
+    // START FAIL-SAFE TIMER
     setTimeout(() => {
-      if (isRinging) sendEmergencyEmail();
-    }, 5 * 60 * 1000); // 5 minutes
+      // CHECK IF RINGING AND EMAIL EXISTS
+      if (isRinging && settings?.emergencyEmail) {
+        sendEmergencyEmail(settings.emergencyEmail);
+      }
+    }, 5 * 60 * 1000); // 5 Minutes
   };
 
-  const sendEmergencyEmail = () => {
-    emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
-      message: "User failed to wake up after 5 minutes!",
-    }, "YOUR_USER_ID");
+  const sendEmergencyEmail = (targetEmail) => {
+    // NOTE: Replace these with your actual EmailJS Service keys
+    emailjs.send(
+      "Study-Helper", 
+      "template_2d6pduo", 
+      {
+        to_email: targetEmail,
+        message: "URGENT: User failed to wake up to their alarm!",
+      }, 
+      "2iAO2hcDv-c-ulN4W"
+    ).then(() => {
+      console.log("Emergency Email Sent");
+    });
   };
 
   const verifyAnswer = () => {

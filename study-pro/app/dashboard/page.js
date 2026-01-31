@@ -1,3 +1,4 @@
+"use client"; // <--- THIS LINE IS REQUIRED FOR RECHARTS
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 // Mock Data (Replace with Firestore data)

@@ -2,14 +2,14 @@
 import { db, auth } from "../lib/firebase";
 import { collection, addDoc, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { useState } from "react";
-import { useAuthState } from "react-firebase-hooks/auth"; // You might need to install this: npm install react-firebase-hooks
+import { useAuthState } from "react-firebase-hooks/auth";
 
 export const useStudySession = () => {
   const [user] = useAuthState(auth);
   const [loading, setLoading] = useState(false);
 
-  // 1. SAVE A SESSION
-  const saveSession = async (durationInSeconds, subject = "General") => {
+  // Updated saveSession to accept 'distractions'
+  const saveSession = async (durationInSeconds, subject = "General", distractions = []) => {
     if (!user) return;
     setLoading(true);
     
@@ -18,10 +18,12 @@ export const useStudySession = () => {
         uid: user.uid,
         duration: durationInSeconds,
         subject: subject,
-        date: Timestamp.now(), // Firestore timestamp
-        type: "focus" // or 'break'
+        date: Timestamp.now(),
+        type: "focus",
+        // SAVE DISTRACTIONS HERE
+        distractions: distractions 
       });
-      console.log("Session saved!");
+      console.log("Session & Mind Dump saved!");
     } catch (error) {
       console.error("Error saving session:", error);
     } finally {
@@ -29,11 +31,8 @@ export const useStudySession = () => {
     }
   };
 
-  // 2. FETCH STATS (e.g., for 'Today' or 'Last 30 Days')
   const getStats = async (daysLookback = 30) => {
     if (!user) return [];
-    
-    // Calculate the start date
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - daysLookback);
 
