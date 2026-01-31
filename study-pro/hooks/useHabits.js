@@ -10,34 +10,39 @@ import { useAuthState } from "react-firebase-hooks/auth";
 export const useHabits = () => {
   const [user] = useAuthState(auth);
   const [habits, setHabits] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // REAL-TIME LISTENER
-  // This automatically updates the UI when data changes in the DB
   useEffect(() => {
     if (!user) return;
-
     const q = query(collection(db, "habits"), where("uid", "==", user.uid));
-    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const habitsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
       setHabits(habitsData);
+      setLoading(false);
     });
-
     return () => unsubscribe();
   }, [user]);
 
-  // ADD HABIT
-  const addHabit = async (title, frequency = "daily") => {
+  // ADD HABIT (With Time)
+  const addHabit = async (title, time = "") => {
+    if (!user) return;
     await addDoc(collection(db, "habits"), {
       uid: user.uid,
       title,
+      time, // e.g. "14:30"
       completedToday: false,
-      streak: 0,
-      frequency
+      streak: 0
     });
+  };
+
+  // EDIT HABIT
+  const updateHabit = async (id, newTitle, newTime) => {
+    const ref = doc(db, "habits", id);
+    await updateDoc(ref, { title: newTitle, time: newTime });
   };
 
   // TOGGLE COMPLETE
@@ -45,8 +50,7 @@ export const useHabits = () => {
     const habitRef = doc(db, "habits", habitId);
     await updateDoc(habitRef, {
       completedToday: !currentStatus,
-      // Simple logic: increment streak if marking true
-      streak: !currentStatus ? 1 : 0 // *Logic can be improved for advanced streak calc*
+      streak: !currentStatus ? 1 : 0 
     });
   };
 
@@ -55,5 +59,5 @@ export const useHabits = () => {
     await deleteDoc(doc(db, "habits", habitId));
   };
 
-  return { habits, addHabit, toggleHabit, deleteHabit };
+  return { habits, addHabit, updateHabit, toggleHabit, deleteHabit, loading };
 };
